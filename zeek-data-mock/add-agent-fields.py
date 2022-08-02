@@ -85,9 +85,7 @@ class ZeekFileWriter:
             "#separator " + separator.encode("unicode_escape").decode("utf-8") + "\n"
         ])
 
-        lines = []
-        for key, value in header.items():
-            lines.append("#" + key + separator + value + "\n")
+        lines = [f"#{key}{separator}{value}" + "\n" for key, value in header.items()]
         self._file.writelines(lines)
         return
 
@@ -205,7 +203,7 @@ class ZeekFileReader:
             field_type = self._field_types[i]
             field_value = tokens[i]
             if field_type.startswith("set[") and field_type.endswith("]") or \
-                field_type.startswith("vector[") and field_type.endswith("]"):
+                    field_type.startswith("vector[") and field_type.endswith("]"):
                 field_value = field_value.split(self.set_separator())
 
             field = ZeekField(field_name, field_type, field_value)
@@ -276,12 +274,10 @@ def main(input_directory: str, output_directory: str):
         out_header = process_header(in_file.header())
         out_file.write_header(out_header)
 
-        i = 0
-        for entry in in_file:
+        for i, entry in enumerate(in_file, start=1):
             if "comment" not in entry:
                 entry = processor_map[in_file.obj_type()](entry)
             out_file.write_entry(entry, in_file.separator(), in_file.set_separator())
-            i += 1
             if i % 10000 == 0:
                 print(".", end="", flush=True)
         print("", flush=True)
